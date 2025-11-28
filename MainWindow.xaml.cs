@@ -199,6 +199,37 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ExportSingleToXmlBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (DocumentsList.SelectedItem is Models.Document selectedDoc)
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Filter = "XML files|*.xml",
+                FileName = $"{selectedDoc.Title}.xml",
+                Title = "Сохранить документ как XML"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try 
+                {
+                    IExportStrategy exporter = new XmlExporter();
+                    var manager = new ExportManager(exporter);
+                    manager.PerformExport(selectedDoc, saveFileDialog.FileName);
+                } 
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        } 
+        else
+        {
+            MessageBox.Show("Выберите документ, который нужно экспортировать.");
+        }
+    }
+
     private void ExportAllBtn_Click(object sender, RoutedEventArgs e)
     {
         ExportAllPopup.IsOpen = true;
@@ -242,6 +273,30 @@ public partial class MainWindow : Window
             try
             {
                 IExportStrategy exporter = new JsonExporter();
+                var manager = new ExportManager(exporter);
+                manager.PerformExportAll(_documents.ToList(), saveFileDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void ExportAllToXmlBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "XML files|*.xml",
+            FileName = $"Вакансии{DateOnly.FromDateTime(DateTime.Now)}.xml",
+            Title = "Сохранить документ как XML"
+        };
+
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                IExportStrategy exporter = new XmlExporter();
                 var manager = new ExportManager(exporter);
                 manager.PerformExportAll(_documents.ToList(), saveFileDialog.FileName);
             }

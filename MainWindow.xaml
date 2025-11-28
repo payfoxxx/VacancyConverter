@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:VacancyConverter"
         mc:Ignorable="d"
         Title="VacancyConverter" Height="600" Width="900"
+        ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -150,6 +151,12 @@
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
                                     Click="ExportSingleToJsonBtn_Click" />
+                                <Button 
+                                    Content="XML" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Width="150" Height="36" 
+                                    Margin="0,0,12,0"
+                                    Click="ExportSingleToXmlBtn_Click" />
                             </StackPanel>
                         </Border>
                     </Popup>
@@ -159,8 +166,7 @@
                         Style="{StaticResource SecondaryButton}"
                         Width="175" Height="36"
                         Margin="0,0,12,0"
-                        Click="ExportAllBtn_Click"
-                        ToolTip="Экспортировать все документы в TXT файл"/>
+                        Click="ExportAllBtn_Click"/>
                     
                         <Popup x:Name="ExportAllPopup"
                             Placement="Bottom"
@@ -180,6 +186,12 @@
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
                                         Click="ExportAllToJsonBtn_Click" />
+                                    <Button 
+                                        Content="XML" 
+                                        Style="{StaticResource SecondaryButton}" 
+                                        Width="175" Height="36" 
+                                        Margin="0,0,12,0"
+                                        Click="ExportAllToXmlBtn_Click" />
                                 </StackPanel>
                             </Border>
                         </Popup>
