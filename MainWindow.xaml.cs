@@ -18,6 +18,7 @@ public partial class MainWindow : Window
 {
     private ObservableCollection<Models.Document> _documents;
     private bool _isSingleFileMode = false;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -133,6 +134,11 @@ public partial class MainWindow : Window
 
     private void ExportSingleBtn_Click(object sender, RoutedEventArgs e)
     {
+        ExportPopup.IsOpen = true;
+    }
+
+    private void ExportSingleToTxtBtn_Click(object sender, RoutedEventArgs e)
+    {
         if (DocumentsList.SelectedItem is Models.Document selectedDoc)
         {
             var saveFileDialog = new SaveFileDialog
@@ -162,7 +168,43 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ExportSingleToJsonBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (DocumentsList.SelectedItem is Models.Document selectedDoc)
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Filter = "JSON files|*.json",
+                FileName = $"{selectedDoc.Title}.json",
+                Title = "Сохранить документ как JSON"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try 
+                {
+                    IExportStrategy exporter = new JsonExporter();
+                    var manager = new ExportManager(exporter);
+                    manager.PerformExport(selectedDoc, saveFileDialog.FileName);
+                } 
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        } 
+        else
+        {
+            MessageBox.Show("Выберите документ, который нужно экспортировать.");
+        }
+    }
+
     private void ExportAllBtn_Click(object sender, RoutedEventArgs e)
+    {
+        ExportAllPopup.IsOpen = true;
+    }
+
+    private void ExportAllToTxtBtn_Click(object sender, RoutedEventArgs e)
     {
         var saveFileDialog = new SaveFileDialog
         {
@@ -176,6 +218,30 @@ public partial class MainWindow : Window
             try
             {
                 IExportStrategy exporter = new TxtExporter();
+                var manager = new ExportManager(exporter);
+                manager.PerformExportAll(_documents.ToList(), saveFileDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void ExportAllToJsonBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "JSON files|*.json",
+            FileName = $"Вакансии{DateOnly.FromDateTime(DateTime.Now)}.json",
+            Title = "Сохранить документ как JSON"
+        };
+
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                IExportStrategy exporter = new JsonExporter();
                 var manager = new ExportManager(exporter);
                 manager.PerformExportAll(_documents.ToList(), saveFileDialog.FileName);
             }

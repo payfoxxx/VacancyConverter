@@ -124,22 +124,65 @@
                 </StackPanel>
     
                 <StackPanel x:Name="ExportButtonPanel" Orientation="Horizontal" Visibility="Collapsed">
-                    <Button x:Name="ExportSingleBtn"
-                        Content="💾 Экспорт в TXT"
-                        Style="{StaticResource SecondaryButton}"
-                        Width="170" Height="36"
-                        Margin="0,0,12,0"
-                        Click="ExportSingleBtn_Click"
-                        ToolTip="Экспортировать текущий документ в TXT файл"/>
                     
-                    <Button x:Name="ExportAllBtn"
-                        Content="💾 Экспорт всех в TXT"
+                    <Button x:Name="ExportSingleBtn"
+                        Content="💾 Экспорт"
                         Style="{StaticResource SecondaryButton}"
-                        Width="170" Height="36"
+                        Width="150" Height="36"
+                        Margin="0,0,12,0"
+                        Click="ExportSingleBtn_Click"/>
+                    
+                    <Popup x:Name="ExportPopup"
+                        Placement="Bottom"
+                        PlacementTarget="{Binding ElementName=ExportSingleBtn}"
+                        StaysOpen="False">
+                        <Border Background="White">
+                            <StackPanel Orientation="Vertical">
+                                <Button 
+                                    Content="TXT" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Width="150" Height="36" 
+                                    Margin="0,0,12,0"
+                                    Click="ExportSingleToTxtBtn_Click" />
+                                <Button 
+                                    Content="JSON" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Width="150" Height="36" 
+                                    Margin="0,0,12,0"
+                                    Click="ExportSingleToJsonBtn_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <Button x:Name="ExportAllBtn"
+                        Content="💾 Экспортировать все"
+                        Style="{StaticResource SecondaryButton}"
+                        Width="175" Height="36"
                         Margin="0,0,12,0"
                         Click="ExportAllBtn_Click"
                         ToolTip="Экспортировать все документы в TXT файл"/>
                     
+                        <Popup x:Name="ExportAllPopup"
+                            Placement="Bottom"
+                            PlacementTarget="{Binding ElementName=ExportAllBtn}"
+                            StaysOpen="False">
+                            <Border Background="White">
+                                <StackPanel Orientation="Vertical">
+                                    <Button 
+                                        Content="TXT" 
+                                        Style="{StaticResource SecondaryButton}" 
+                                        Width="175" Height="36" 
+                                        Margin="0,0,12,0"
+                                        Click="ExportAllToTxtBtn_Click" />
+                                    <Button 
+                                        Content="JSON" 
+                                        Style="{StaticResource SecondaryButton}" 
+                                        Width="175" Height="36" 
+                                        Margin="0,0,12,0"
+                                        Click="ExportAllToJsonBtn_Click" />
+                                </StackPanel>
+                            </Border>
+                        </Popup>
                 </StackPanel>
             </StackPanel>
         </Border>
