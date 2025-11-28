@@ -1,20 +1,13 @@
-﻿using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
-using System.Text;
-using DocumentFormat.OpenXml.Wordprocessing;
-using DocumentFormat.OpenXml.Packaging;
 using System.Collections.ObjectModel;
 using System.IO;
 using Microsoft.WindowsAPICodePack.Dialogs;
+
+using Strategies;
+using Services;
+using Helpers;
 
 namespace VacancyConverter;
 
@@ -23,12 +16,12 @@ namespace VacancyConverter;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private ObservableCollection<Document> _documents;
+    private ObservableCollection<Models.Document> _documents;
     private bool _isSingleFileMode = false;
     public MainWindow()
     {
         InitializeComponent();
-        _documents = new ObservableCollection<Document>();
+        _documents = new ObservableCollection<Models.Document>();
         DocumentsList.ItemsSource = _documents;
     }
 
@@ -77,74 +70,20 @@ public partial class MainWindow : Window
         if (openFileDialog.ShowDialog() == true)
         {
             _isSingleFileMode = true;
-            await ProcessFileAsync(openFileDialog.FileName);
+            try
+            {
+                var document = WordReader.ReadFile(openFileDialog.FileName);
+                _documents.Add(document);
+                DocumentsList.SelectedItem = DocumentsList.Items[0];
+                ContentText.Text = FormatTextHelper.FormatText(document);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при чтении файла: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             DocumentsListHeader.Text = "Документ";
             UpdateExportButtonsVisibility();
         }
-    }
-
-    private async Task ProcessFileAsync(string filePath)
-    {
-        try
-        {
-            Document document = new Document();
-            document.FileName = filePath.ToString();
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true)) 
-            {
-                Body body = doc.MainDocumentPart.Document.Body;
-                bool isDuty = false;
-                bool isRequirement = false;
-                bool isCondition = false;
-                
-                foreach (var paragraph in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
-                {
-                    string text = paragraph.InnerText;
-                    if (string.IsNullOrWhiteSpace(text))
-                        continue;
-                    else
-                    {
-                    if (text.Equals("Обязанности:"))
-                    {
-                            isDuty = true;
-                            isRequirement = false;
-                            isCondition = false;
-                            continue;
-                    } else if (text.Equals("Требования:"))
-                    {
-                            isDuty = false;
-                            isRequirement = true;
-                            isCondition = false;
-                            continue;
-                    } else if (text.Equals("Условия:"))
-                    {
-                            isDuty = false;
-                            isRequirement = false;
-                            isCondition = true;
-                            continue;
-                    } else if (text.Equals("Этапы трудоустройства:"))
-                            break;
-                    }
-                    
-                    if (isDuty)
-                        document.Duties.Add(text);
-                    
-                    if (isRequirement)
-                        document.Requirements.Add(text);
-                    
-                    if (isCondition)
-                        document.Conditions.Add(text);
-
-                    if ((isDuty || isCondition || isRequirement) == false)
-                        document.Title = text;
-                }
-            }
-
-            _documents.Add(document);
-            DocumentsList.SelectedItem = DocumentsList.Items[0];
-            ContentText.Text = FormatText(document);
-        }
-        catch(Exception ex)
-        {}
     }
 
     private async void SelectFolderBtn_Click(object sender, RoutedEventArgs e)
@@ -178,23 +117,44 @@ public partial class MainWindow : Window
                 string[] allFiles = Directory.GetFiles(folderPath, "*.docx");
                 foreach (var file in allFiles)
                 {
-                    await ProcessFileAsync(file);
+                    var document = WordReader.ReadFile(file);
+                    _documents.Add(document);
                 }
                 DocumentsListHeader.Text = $"Документы (кол-во: {allFiles.Length})";
+                DocumentsList.SelectedItem = DocumentsList.Items[0];
                 UpdateExportButtonsVisibility();
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show($"Ошибка при чтении файла: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
 
     private void ExportSingleBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (DocumentsList.SelectedItem is Document selectedDoc)
+        if (DocumentsList.SelectedItem is Models.Document selectedDoc)
         {
-            ExportDocumentToTxt(selectedDoc);
+            var saveFileDialog = new SaveFileDialog
+            {
+                Filter = "Text files|*.txt",
+                FileName = $"{selectedDoc.Title}.txt",
+                Title = "Сохранить документ как TXT"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try 
+                {
+                    IExportStrategy exporter = new TxtExporter();
+                    var manager = new ExportManager(exporter);
+                    manager.PerformExport(selectedDoc, saveFileDialog.FileName);
+                } 
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         } 
         else
         {
@@ -203,34 +163,6 @@ public partial class MainWindow : Window
     }
 
     private void ExportAllBtn_Click(object sender, RoutedEventArgs e)
-    {
-        ExportDocumentsToTxt(_documents.ToList());
-    }
-
-    private void ExportDocumentToTxt(Document document)
-    {
-        var saveFileDialog = new SaveFileDialog
-        {
-            Filter = "Text files|*.txt",
-            FileName = $"{document.Title}.txt",
-            Title = "Сохранить документ как TXT"
-        };
-
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            try 
-            {
-                string content = FormatText(document);
-                File.WriteAllText(saveFileDialog.FileName, content);
-            } 
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-    }
-
-    private void ExportDocumentsToTxt(List<Document> documents)
     {
         var saveFileDialog = new SaveFileDialog
         {
@@ -243,12 +175,9 @@ public partial class MainWindow : Window
         {
             try
             {
-                StringBuilder builder = new StringBuilder();
-                foreach (var document in documents)
-                {
-                    builder.Append(FormatText(document));
-                }
-                File.WriteAllText(saveFileDialog.FileName, builder.ToString());
+                IExportStrategy exporter = new TxtExporter();
+                var manager = new ExportManager(exporter);
+                manager.PerformExportAll(_documents.ToList(), saveFileDialog.FileName);
             }
             catch (Exception ex)
             {
@@ -257,40 +186,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private string FormatText(Document document)
-    {
-        return new StringBuilder()
-                .AppendLine(document.Title)
-                .AppendLine()
-                .AppendLine("Обязанности:")
-                .AppendLine(string.Join(Environment.NewLine, document.Duties))
-                .AppendLine()
-                .AppendLine("Требования:")
-                .AppendLine(string.Join(Environment.NewLine, document.Requirements))
-                .AppendLine()
-                .AppendLine("Условия:")
-                .AppendLine(string.Join(Environment.NewLine, document.Conditions))
-                .AppendLine("====================================")
-                .AppendLine()
-                .ToString();
-    }
-
     private void OnDocumentSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (DocumentsList.SelectedItem is Document doc)
+        if (DocumentsList.SelectedItem is Models.Document doc)
         {
-            ContentText.Text = FormatText(doc);
+            ContentText.Text = FormatTextHelper.FormatText(doc);
         }
     }
 }
 
 
 
-public class Document 
-{
-    public string? Title { get; set; }
-    public string? FileName { get; set; }
-    public List<string> Duties { get; set; } = new List<string>();
-    public List<string> Requirements { get; set; } = new List<string>();
-    public List<string> Conditions { get; set; } = new List<string>();
-}
+
