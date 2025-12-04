@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VacancyConverter"
         xmlns:converters="clr-namespace:VacancyConverter.Converters"
+        xmlns:services="clr-namespace:VacancyConverter.Services"
         mc:Ignorable="d"
         Title="VacancyConverter" Height="600" Width="900"
         ResizeMode="NoResize"
@@ -12,6 +13,10 @@
 
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <services:ExportFormat x:Key="TxtFormat">Txt</services:ExportFormat>
+        <services:ExportFormat x:Key="JsonFormat">Json</services:ExportFormat>
+        <services:ExportFormat x:Key="XmlFormat">Xml</services:ExportFormat>
+
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#007acc"/>
             <Setter Property="Foreground" Value="White"/>
@@ -150,19 +155,22 @@
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Command="{Binding ExportToTxtCommand}" />
+                                    Command="{Binding ExportSelectedDocumentCommand}"
+                                    CommandParameter="{StaticResource TxtFormat}" />
                                 <Button 
                                     Content="JSON" 
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Command="{Binding ExportToJsonCommand}" />
+                                    Command="{Binding ExportSelectedDocumentCommand}"
+                                    CommandParameter="{StaticResource JsonFormat}" />
                                 <Button 
                                     Content="XML" 
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Command="{Binding ExportToXmlCommand}" />
+                                    Command="{Binding ExportSelectedDocumentCommand}"
+                                    CommandParameter="{StaticResource XmlFormat}" />
                             </StackPanel>
                         </Border>
                     </Popup>
@@ -187,19 +195,22 @@
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Command="{Binding ExportAllToTxtCommand}" />
+                                        Command="{Binding ExportAllDocumentsCommand}"
+                                        CommandParameter="{StaticResource TxtFormat}" />
                                     <Button 
                                         Content="JSON" 
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Command="{Binding ExportAllToJsonCommand}" />
+                                        Command="{Binding ExportAllDocumentsCommand}"
+                                        CommandParameter="{StaticResource JsonFormat}" />
                                     <Button 
                                         Content="XML" 
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Command="{Binding ExportAllToXmlCommand}" />
+                                        Command="{Binding ExportAllDocumentsCommand}"
+                                        CommandParameter="{StaticResource XmlFormat}" />
                                 </StackPanel>
                             </Border>
                         </Popup>

@@ -1,12 +1,10 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
-using Microsoft.Win32;
 
 using VacancyConverter.Commands;
 using VacancyConverter.Helpers;
 using VacancyConverter.Services;
-using VacancyConverter.Strategies;
 
 namespace VacancyConverter.ViewModels;
 
@@ -14,6 +12,7 @@ public class MainViewModel : ViewModelBase
 {
     private readonly IFileDialogService _fileDialogService;
     private readonly IMessageBoxService _messageBoxService;
+    private readonly IExportService _exportService;
 
     private ObservableCollection<DocumentViewModel> _documents;
     private DocumentViewModel _selectedDocument;
@@ -28,11 +27,13 @@ public class MainViewModel : ViewModelBase
 
     public MainViewModel(
         IFileDialogService fileDialogService,
-        IMessageBoxService messageBoxService
+        IMessageBoxService messageBoxService,
+        IExportService exportService
     )
     {
         _fileDialogService = fileDialogService;
         _messageBoxService = messageBoxService;
+        _exportService = exportService;
 
         Documents = new ObservableCollection<DocumentViewModel>();
 
@@ -42,13 +43,8 @@ public class MainViewModel : ViewModelBase
         ExportSingleCommand = new RelayCommand(_ => IsExportPopupOpen = true);
         ExportAllCommand = new RelayCommand(_ => IsExportAllPopupOpen = true);
 
-        ExportToTxtCommand = new RelayCommand(_ => ExportSelectedDocument("txt"));
-        ExportToJsonCommand = new RelayCommand(_ => ExportSelectedDocument("json"));
-        ExportToXmlCommand = new RelayCommand(_ => ExportSelectedDocument("xml"));
-
-        ExportAllToTxtCommand = new RelayCommand(_ => ExportAllDocuments("txt"));
-        ExportAllToJsonCommand = new RelayCommand(_ => ExportAllDocuments("json"));
-        ExportAllToXmlCommand = new RelayCommand(_ => ExportAllDocuments("xml"));
+        ExportSelectedDocumentCommand = new RelayCommand<ExportFormat>(ExportDocument);
+        ExportAllDocumentsCommand = new RelayCommand<ExportFormat>(ExportAllDocuments);
     }
 
 
@@ -117,30 +113,15 @@ public class MainViewModel : ViewModelBase
     public ICommand SelectFolderCommand { get; }
     public ICommand ExportSingleCommand { get; }
     public ICommand ExportAllCommand { get; }
-    public ICommand ExportToTxtCommand { get; }
-    public ICommand ExportToJsonCommand { get; }
-    public ICommand ExportToXmlCommand { get; }
-    public ICommand ExportAllToTxtCommand { get; }
-    public ICommand ExportAllToJsonCommand { get; }
-    public ICommand ExportAllToXmlCommand { get; }
+    public ICommand ExportSelectedDocumentCommand { get; }
+    public ICommand ExportAllDocumentsCommand { get; }
 
 
     private void SelectFile()
     {
-        if (Documents.Any())
-        {
-            var result = _messageBoxService.ShowConfirmation(
-                "Произойдет обнуление текущего прогресса, Вы уверены?",
-                "Внимание"
-            );
+        if (!ConfirmClearDocuments()) return;
 
-            if (!result) 
-                return;
-            
-            Documents.Clear();
-        }
-
-        var filePath = _fileDialogService.OpenDialog(
+        var filePath = _fileDialogService.OpenFileDialog(
             "Word Documents|*.docx",
             "Выберите Word документ"
         );
@@ -151,22 +132,21 @@ public class MainViewModel : ViewModelBase
 
     private void SelectFolder()
     {
-        if (Documents.Any())
-        {
-            var result = _messageBoxService.ShowConfirmation(
-                "Произойдет обнуление текущего прогресса, Вы уверены?",
-                "Внимание"
-            );
-
-            if (!result) 
-                return;
-            
-            Documents.Clear();
-        }
+        if (!ConfirmClearDocuments()) return;
 
         var folderPath = _fileDialogService.OpenFolderDialog();
         if (string.IsNullOrEmpty(folderPath)) return;
         ProcessFolder(folderPath, false);
+    }
+
+    private bool ConfirmClearDocuments()
+    {
+        if (!Documents.Any()) return true;
+
+        return _messageBoxService.ShowConfirmation(
+            "Произойдет обнуление текущего прогресса, Вы уверены?",
+            "Внимание"
+        );
     }
 
     private void ProcessFolder(string folderPath, bool isSingleFile)
@@ -174,6 +154,7 @@ public class MainViewModel : ViewModelBase
         try 
         {
             _isSingleFileMode = isSingleFile;
+            Documents.Clear();
 
             string[] allFiles = Directory.GetFiles(folderPath, "*.docx");
             foreach(var file in allFiles)
@@ -200,6 +181,7 @@ public class MainViewModel : ViewModelBase
         try
         {
             _isSingleFileMode = isSingleFile;
+            Documents.Clear();
 
             var document = WordReader.ReadFile(filePath);
             var documentViewModel = new DocumentViewModel(document);
@@ -216,7 +198,7 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    private void ExportSelectedDocument(string format)
+    private void ExportDocument(ExportFormat format)
     {
         if (SelectedDocument == null)
         {
@@ -224,71 +206,42 @@ public class MainViewModel : ViewModelBase
             return;
         }
 
-        var saveFileDialog = new SaveFileDialog()
-        {
-            Filter = $"{format.ToUpper()} files|*.{format}",
-            FileName = $"{SelectedDocument.Title}.{format}",
-            Title = $"Сохранить документ как {format.ToUpper()}"
-        };
+        var options = DialogOptionsFactory.CreateExportOptions(
+            format.ToString().ToLower(),
+            SelectedDocument.Title
+        );
 
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            try 
-            {
-                IExportStrategy exporter = format.ToLower() switch 
-                {
-                    "txt" => new TxtExporter(),
-                    "json" => new JsonExporter(),
-                    "xml" => new XmlExporter(),
-                    _ => throw new NotSupportedException($"Формат {format} не найден")
-                };
-                var manager = new ExportManager(exporter);
-                manager.PerformExport(SelectedDocument.Document, saveFileDialog.FileName);
-                _messageBoxService.ShowInfo("Экспорт выполнен успешно!");
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"Ошибка при экспорте: {ex.Message}", "Ошибка");
-            }
-        }
+        var success = _exportService.ExportDocument(
+            SelectedDocument.Document,
+            options,
+            format
+        );
+
+        if (success)
+            _messageBoxService.ShowInfo("Экспорт завершен успешно");
     }
 
-    private void ExportAllDocuments(string format)
+    private void ExportAllDocuments(ExportFormat format)
     {
         if (!Documents.Any())
         {
-            _messageBoxService.ShowInfo("Документы отсвутсвуют!");
+            _messageBoxService.ShowInfo("Документы отсутствуют!");
             return;
         }
 
-        var saveFileDialog = new SaveFileDialog
-        {
-            Filter = $"{format.ToUpper()} files|*.{format}",
-            FileName = $"Вакансии_{DateOnly.FromDateTime(DateTime.Now)}.{format}",
-            Title = $"Сохранить документ как {format.ToUpper()}"
-        };
+        var options = DialogOptionsFactory.CreateExportOptions(
+            format.ToString().ToLower());
 
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            try 
-            {
-                IExportStrategy exporter = format.ToLower() switch 
-                {
-                    "txt" => new TxtExporter(),
-                    "json" => new JsonExporter(),
-                    "xml" => new XmlExporter(),
-                    _ => throw new NotSupportedException($"Формат {format} не найден")
-                };
-                var manager = new ExportManager(exporter);
-                var documents = Documents.Select(d => d.Document).ToList();
-                manager.PerformExportAll(documents, saveFileDialog.FileName);
-                _messageBoxService.ShowInfo("Экспорт выполнен успешно!");
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"Ошибка при экспорте: {ex.Message}", "Ошибка");
-            }
-        }
+        var documents = Documents.Select(d => d.Document).ToList();
+
+        var success = _exportService.ExportAllDocuments(
+            documents,
+            options,
+            format
+        );
+
+        if (success)
+            _messageBoxService.ShowInfo("Экспорт завершен успешно");
     }
 
     private void UpdateExportButtonsVisibility()

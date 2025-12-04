@@ -16,8 +16,9 @@ public partial class MainWindow : Window
 
         var fileDialogService = new FileDialogService();
         var messageBoxService = new MessageBoxService();
+        var exportService = new ExportService(fileDialogService);
 
-        DataContext = new MainViewModel(fileDialogService, messageBoxService);
+        DataContext = new MainViewModel(fileDialogService, messageBoxService, exportService);
     }
 }
 

@@ -5,7 +5,7 @@ namespace VacancyConverter.Services;
 
 public class FileDialogService : IFileDialogService
 {
-    public string? OpenDialog(string filter, string title)
+    public string? OpenFileDialog(string filter, string title)
     {
         var openFileDialog = new OpenFileDialog
         {
@@ -23,5 +23,21 @@ public class FileDialogService : IFileDialogService
             Multiselect = false
         };
         return openFolderDialog.ShowDialog() == CommonFileDialogResult.Ok ? openFolderDialog.FileName : null;
+    }
+
+    public string? SaveFileDialog(SaveFileDialogOptions options)
+    {
+        return SaveFileDialog(options.Filter, options.DefaultFileName, options.Title);
+    }
+
+    public string? SaveFileDialog(string filter, string defaultFileName, string title)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = filter,
+            FileName = defaultFileName,
+            Title = title
+        };
+        return saveFileDialog.ShowDialog() == true ? saveFileDialog.FileName : null;
     }
 }
