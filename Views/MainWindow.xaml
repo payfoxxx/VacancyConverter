@@ -1,15 +1,17 @@
-﻿<Window x:Class="VacancyConverter.MainWindow"
+﻿<Window x:Class="VacancyConverter.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VacancyConverter"
+        xmlns:converters="clr-namespace:VacancyConverter.Converters"
         mc:Ignorable="d"
         Title="VacancyConverter" Height="600" Width="900"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#007acc"/>
             <Setter Property="Foreground" Value="White"/>
@@ -112,7 +114,7 @@
                         Style="{StaticResource ModernButton}"
                         Width="170" Height="36"
                         Margin="0,0,12,0" 
-                        Click="SelectFileBtn_Click"
+                        Command="{Binding SelectFileCommand}"
                     />
                     
                     <Button x:Name="SelectFolderBtn"
@@ -120,20 +122,24 @@
                         Style="{StaticResource ModernButton}"
                         Width="170" Height="36"
                         Margin="0,0,12,0"
-                        Click="SelectFolderBtn_Click"
+                        Command="{Binding SelectFolderCommand}"
                     />    
                 </StackPanel>
     
-                <StackPanel x:Name="ExportButtonPanel" Orientation="Horizontal" Visibility="Collapsed">
+                <StackPanel x:Name="ExportButtonPanel" 
+                    Orientation="Horizontal" 
+                    Visibility="{Binding ShowExportButtons, Converter={StaticResource BooleanToVisibilityConverter}}">
                     
                     <Button x:Name="ExportSingleBtn"
                         Content="💾 Экспорт"
                         Style="{StaticResource SecondaryButton}"
                         Width="150" Height="36"
                         Margin="0,0,12,0"
-                        Click="ExportSingleBtn_Click"/>
+                        Command="{Binding ExportSingleCommand}"
+                        Visibility="{Binding ShowSingleExportButton, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     
                     <Popup x:Name="ExportPopup"
+                        IsOpen="{Binding IsExportPopupOpen, Mode=TwoWay}"
                         Placement="Bottom"
                         PlacementTarget="{Binding ElementName=ExportSingleBtn}"
                         StaysOpen="False">
@@ -144,19 +150,19 @@
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Click="ExportSingleToTxtBtn_Click" />
+                                    Command="{Binding ExportToTxtCommand}" />
                                 <Button 
                                     Content="JSON" 
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Click="ExportSingleToJsonBtn_Click" />
+                                    Command="{Binding ExportToJsonCommand}" />
                                 <Button 
                                     Content="XML" 
                                     Style="{StaticResource SecondaryButton}" 
                                     Width="150" Height="36" 
                                     Margin="0,0,12,0"
-                                    Click="ExportSingleToXmlBtn_Click" />
+                                    Command="{Binding ExportToXmlCommand}" />
                             </StackPanel>
                         </Border>
                     </Popup>
@@ -166,9 +172,11 @@
                         Style="{StaticResource SecondaryButton}"
                         Width="175" Height="36"
                         Margin="0,0,12,0"
-                        Click="ExportAllBtn_Click"/>
+                        Command="{Binding ExportAllCommand}"
+                        Visibility="{Binding ShowAllExportButton, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     
                         <Popup x:Name="ExportAllPopup"
+                            IsOpen="{Binding IsExportAllPopupOpen, Mode=TwoWay}"
                             Placement="Bottom"
                             PlacementTarget="{Binding ElementName=ExportAllBtn}"
                             StaysOpen="False">
@@ -179,19 +187,19 @@
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Click="ExportAllToTxtBtn_Click" />
+                                        Command="{Binding ExportAllToTxtCommand}" />
                                     <Button 
                                         Content="JSON" 
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Click="ExportAllToJsonBtn_Click" />
+                                        Command="{Binding ExportAllToJsonCommand}" />
                                     <Button 
                                         Content="XML" 
                                         Style="{StaticResource SecondaryButton}" 
                                         Width="175" Height="36" 
                                         Margin="0,0,12,0"
-                                        Click="ExportAllToXmlBtn_Click" />
+                                        Command="{Binding ExportAllToXmlCommand}" />
                                 </StackPanel>
                             </Border>
                         </Popup>
@@ -213,8 +221,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="DocumentsListHeader"
-                        Text="Документы"
+                    <TextBlock Text="{Binding DocumentsHeader}"
                         FontWeight="SemiBold"
                         FontSize="14"
                         Foreground="#333333"
@@ -223,9 +230,10 @@
 
                     <ListBox x:Name="DocumentsList"
                         Grid.Row="1"
+                        ItemsSource="{Binding Documents}"
+                        SelectedItem="{Binding SelectedDocument}"
                         Style="{StaticResource DocumentListStyle}"
-                        ItemContainerStyle="{StaticResource DocumentItemStyle}"
-                        SelectionChanged="OnDocumentSelected">
+                        ItemContainerStyle="{StaticResource DocumentItemStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
@@ -263,7 +271,7 @@
                         Background="#fcfcfc"
                         CornerRadius="2">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
-                            <TextBlock x:Name="ContentText"
+                            <TextBlock Text="{Binding FormattedContent}"
                                 TextWrapping="Wrap"
                                 TextAlignment="Left"
                                 FontSize="13"

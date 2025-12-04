@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System.Xml.Serialization;
 
-namespace Models;
+namespace VacancyConverter.Models;
 
 public class Document 
 {

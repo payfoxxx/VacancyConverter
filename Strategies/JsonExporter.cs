@@ -1,10 +1,10 @@
-using Models;
-using Helpers;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Strategies;
+using VacancyConverter.Models;
+
+namespace VacancyConverter.Strategies;
 
 public class JsonExporter : IExportStrategy
 {

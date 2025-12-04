@@ -1,7 +1,7 @@
 using System.Text;
-using Models;
+using VacancyConverter.Models;
 
-namespace Helpers;
+namespace VacancyConverter.Helpers;
 
 public static class FormatTextHelper
 {

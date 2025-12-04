@@ -1,14 +1,13 @@
 using DocumentFormat.OpenXml.Wordprocessing;
 using DocumentFormat.OpenXml.Packaging;
-using Models;
 
-namespace Helpers;
+namespace VacancyConverter.Helpers;
 
 public static class WordReader
 {
-    public static Models.Document ReadFile(string filePath)
+    public static VacancyConverter.Models.Document ReadFile(string filePath)
     {
-        Models.Document document = new Models.Document();
+        VacancyConverter.Models.Document document = new VacancyConverter.Models.Document();
         document.FileName = filePath.ToString();
         using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true)) 
         {

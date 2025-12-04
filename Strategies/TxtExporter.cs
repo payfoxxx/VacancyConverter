@@ -1,9 +1,10 @@
-using Models;
-using Helpers;
 using System.IO;
 using System.Text;
 
-namespace Strategies;
+using VacancyConverter.Models;
+using VacancyConverter.Helpers;
+
+namespace VacancyConverter.Strategies;
 
 public class TxtExporter : IExportStrategy
 {

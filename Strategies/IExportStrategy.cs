@@ -1,8 +1,8 @@
-using Models;
+using VacancyConverter.Models;
 
-namespace Strategies;
+namespace VacancyConverter.Strategies;
 
-public interface IExportStrategy
+public interface  IExportStrategy
 {
     void Export(Document document, string outputFilePath);
     void ExportAll(List<Document> documents, string outputFilePath);

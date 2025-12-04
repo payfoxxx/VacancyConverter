@@ -1,10 +1,9 @@
-using Models;
-using Helpers;
 using System.IO;
-using System.Text;
 using System.Xml.Serialization;
 
-namespace Strategies;
+using VacancyConverter.Models;
+
+namespace VacancyConverter.Strategies;
 
 public class XmlExporter : IExportStrategy
 {

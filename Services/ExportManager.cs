@@ -1,7 +1,7 @@
-using Models;
-using Strategies;
+using VacancyConverter.Models;
+using VacancyConverter.Strategies;
 
-namespace Services;
+namespace VacancyConverter.Services;
 
 public class ExportManager 
 {
